@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ image.title }}{% endblock %}
+{% block content %}
+ <div class="row">
+  <div class="col-12 col-lg-8">
+   <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+     <a href="{{ image.image.url }}" data-bs-toggle="modal" data-bs-target="#imageModal">
+      {% load thumbnail %}
+      <img src="{% thumbnail image.image 800x600 %}" class="img-fluid w-100" alt="{{ image.title }}">
+     </a>
+    </div>
+   </div>
+  </div>
+  
+  <div class="col-12 col-lg-4">
+   <div class="card border-0 shadow-sm">
+    <div class="card-body">
+     <h1 class="h5 mb-3">{{ image.title }}</h1>
+     
+     {% with total_likes=image.users_like.count users_like=image.users_like.all %}
+      <div class="d-flex align-items-center justify-content-between mb-3">
+       <span class="count1 badge bg-primary fs-6">
+        <i class="fas fa-heart me-1"></i>
+        <span class="total">{{ total_likes }}</span>
+        like{{ total_likes|pluralize }}
+       </span>
+       <span class="count1 badge bg-secondary fs-6">
+        <i class="fas fa-eye me-1"></i>
+        <span class="total">{{ total_views }}</span>
+        view{{ total_views|pluralize }}
+       </span>
+       {% if request.user.is_authenticated %}
+        <a href="#" data-id="{{ image.id }}" data-action="{% if request.user in users_like %}un{% endif %}like" class="like btn btn-outline-danger btn-sm">
+         {% if request.user not in users_like %}
+          <i class="fas fa-heart me-1"></i> Like
+         {% else %}
+          <i class="fas fa-heart me-1"></i> Unlike
+         {% endif %}
+        </a>
+       {% endif %}
+      </div>
+      
+      {% if image.description %}
+       <div class="mb-3">
+        <h6 class="text-muted mb-2">Description</h6>
+        <p class="mb-0">{{ image.description|linebreaks }}</p>
+       </div>
+      {% endif %}
+      
+      <div class="mb-3">
+       <h6 class="text-muted mb-2">Uploaded by</h6>
+       <div class="d-flex align-items-center">
+        {% if image.user.profile.photo %}
+         <img src="{{ image.user.profile.photo.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ image.user.get_full_name }}">
+        {% else %}
+         <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:32px;height:32px;">
+          <i class="fas fa-user text-white"></i>
+         </div>
+        {% endif %}
+        <a href="{{ image.user.get_absolute_url }}" class="text-decoration-none">{{ image.user.get_full_name }}</a>
+       </div>
+      </div>
+      
+      {% if users_like %}
+       <div>
+        <h6 class="text-muted mb-2">Liked by</h6>
+        <div class="d-flex flex-wrap gap-2">
+         {% for user in users_like %}
+          <div class="d-flex align-items-center">
+           {% if user.profile.photo %}
+            <img src="{{ user.profile.photo.url }}" class="rounded-circle me-1" width="24" height="24" alt="{{ user.get_full_name }}">
+           {% else %}
+            <div class="bg-secondary rounded-circle me-1 d-flex align-items-center justify-content-center" style="width:24px;height:24px;">
+             <i class="fas fa-user text-white" style="font-size:10px;"></i>
+            </div>
+           {% endif %}
+           <a href="{{ user.get_absolute_url }}" class="text-decoration-none small">{{ user.first_name }}</a>
+          </div>
+         {% endfor %}
+        </div>
+       </div>
+      {% else %}
+       <div class="text-muted small">Nobody likes this image yet.</div>
+      {% endif %}
+     {% endwith %}
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <!-- Image Modal -->
+ <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+   <div class="modal-content">
+    <div class="modal-header">
+     <h5 class="modal-title" id="imageModalLabel">{{ image.title }}</h5>
+     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body p-0">
+     <img src="{{ image.image.url }}" class="img-fluid w-100" alt="{{ image.title }}">
+    </div>
+   </div>
+  </div>
+ </div>
+{% endblock %}
+
+{% block domready %}
+    const url = '{% url "images:like" %}';
+    var options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin'
+    }
+    document.querySelector('a.like').addEventListener('click', function(e){
+    e.preventDefault();
+    var likeButton = this;
+    
+    // add request body
+    var formData = new FormData();
+    formData.append('id', likeButton.dataset.id);
+    formData.append('action', likeButton.dataset.action);
+    options['body'] = formData;
+    // send HTTP request
+    fetch(url, options).then(response => response.json()).then(data => {
+      if (data['status'] === 'ok')
+      {
+        var previousAction = likeButton.dataset.action;
+        // toggle button text and data-action
+        var action = previousAction === 'like' ? 'unlike' : 'like';
+        likeButton.dataset.action = action;
+        likeButton.innerHTML = (action === 'like') ? '<i class="fas fa-heart me-1"></i> Like' : '<i class="fas fa-heart me-1"></i> Unlike';
+        // update like count
+        var likeCount = document.querySelector('span.count1 .total');
+        var totalLikes = parseInt(likeCount.innerHTML);
+        likeCount.innerHTML = previousAction === 'like' ? totalLikes + 1 : totalLikes - 1;
+      }
+    })
+    });
+{% endblock domready %}

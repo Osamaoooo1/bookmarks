@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+ {% with total_images_created=request.user.images_created.count %}
+ <div class="row align-items-center mb-4">
+  <div class="col">
+   <h1 class="h3 mb-1">Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+   <p class="text-muted mb-0">You have bookmarked {{ total_images_created }} image{{ total_images_created|pluralize }}.</p>
+  </div>
+  <div class="col-auto">
+   <a href="{% url 'images:list' %}" class="btn btn-primary">
+    <i class="fas fa-images me-1"></i> Browse Images
+   </a>
+  </div>
+ </div>
+ {% endwith %}
+
+ <div class="row g-3 mb-4">
+  <div class="col-12 col-md-4">
+   <div class="card border-0 shadow-sm h-100">
+    <div class="card-body d-flex align-items-center">
+     <div class="me-3 rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+      <i class="fas fa-bookmark"></i>
+     </div>
+     <div>
+      <div class="text-muted small">Total Bookmarks</div>
+      <div class="fw-semibold">{{ request.user.images_created.count }}</div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="col-12 col-md-4">
+   <div class="card border-0 shadow-sm h-100">
+    <div class="card-body d-flex align-items-center">
+     <div class="me-3 rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+      <i class="fas fa-user-friends"></i>
+     </div>
+     <div>
+      <div class="text-muted small">Followers</div>
+      <div class="fw-semibold">{{ request.user.followers.count }}</div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="col-12 col-md-4">
+   <div class="card border-0 shadow-sm h-100">
+    <div class="card-body d-flex align-items-center">
+     <div class="me-3 rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+      <i class="fas fa-user-plus"></i>
+     </div>
+     <div>
+      <div class="text-muted small">Following</div>
+      <div class="fw-semibold">{{ request.user.following.count }}</div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="card border-0 shadow-sm mb-4">
+  <div class="card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+   <p class="mb-3 mb-md-0">
+    Drag the following button to your bookmarks toolbar to bookmark images from other websites.
+   </p>
+   <a href="javascript:{% include 'bookmarklet_launcher.js' %}" class="btn btn-outline-primary">
+    <i class="fas fa-bookmark me-1"></i> Bookmark it
+   </a>
+  </div>
+ </div>
+
+ <div class="mb-4">
+  <a href="{% url 'edit' %}" class="btn btn-secondary btn-sm me-2">
+   <i class="fas fa-user-edit me-1"></i> Edit profile
+  </a>
+  <a href="{% url 'password_change' %}" class="btn btn-outline-secondary btn-sm">
+   <i class="fas fa-key me-1"></i> Change password
+  </a>
+ </div>
+
+ <h2 class="h5 mb-3"><i class="fas fa-stream me-1"></i> What's happening</h2>
+ <div id="action-list" class="vstack gap-3">
+  {% for action in actions %}
+    <div class="card border-0 shadow-sm">
+     <div class="card-body">
+      {% include "actions/action/detail.html" %}
+     </div>
+    </div>
+  {% empty %}
+    <div class="alert alert-info mb-0">No recent activity yet. Start by bookmarking an image or following people.</div>
+  {% endfor %}
+ </div>
+{% endblock %}
